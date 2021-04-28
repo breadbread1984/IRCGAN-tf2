@@ -18,13 +18,13 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5):
   hiddens = [tf.keras.Input((2**i * 2**i * channels * 2,)) for i in range(layers)]; # hiddens[i].shape = (batch, 2^i * 2^i * channels * 2)
   cells = [tf.keras.Input((2**i * 2**i * channels * 2,)) for i in range(layers)]; # cells[i].shape = (batch, 2^i * 2^i * channels * 2)
   results = tf.keras.layers.Reshape((1, 1, channels))(inputs); # results.shape = (batch, 1, 1, channels)
+  dnorm = tf.keras.layers.Lambda(lambda x: tf.random.normal(shape = tf.shape(x)))(results); # dnorm.shape = (batch, 1, 1, channel)
+  results = tf.keras.layers.Concatenate(axis = -1)([results, dnorm]); # results.shape = (batch, 1, 1, 2 * channels)
   next_hiddens = list();
   next_cells = list();
   for i in range(layers):
-    dnorm = tf.keras.layers.Lambda(lambda x: tf.random.normal(shape = tf.shape(x)))(results); # dnorm.shape = (batch, 2^i, 2^i, channel)
-    results = tf.keras.layers.Concatenate(axis = -1)([results, dnorm]); # results.shape = (batch, 2^i, 2^i, 2 * channels)
-    lstm_inputs = tf.keras.layers.Flatten()(results); # lstm_inputs.shape = (batch, 2^i * 2^i * channels * 2)
-    hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i * 2 * channels, return_state = True)(lstm_inputs, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch, 2^i * 2^i * channels * 2)
+    lstm_inputs = tf.keras.layers.Reshape((1, 2**i * 2**i * 2 * channels))(results); # lstm_inputs.shape = (batch, 1, 2^i * 2^i * channels * 2)
+    results, hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i * 2 * channels, return_state = True)(lstm_inputs, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch, 2^i * 2^i * channels * 2)
     next_hiddens.append(hidden);
     next_cells.append(cell);
     results = tf.keras.layers.Reshape((2**i, 2**i, 2 * channels))(hidden); # results.shape = (batch, 2^i, 2^i, 2 * channels)
