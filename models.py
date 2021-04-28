@@ -13,7 +13,7 @@ def TextEncoder(src_vocab_size, input_dims, units = 8):
     merge_mode = 'concat')(results); # results.shape = (batch, 2 * encoder_params['units'])
   return tf.keras.Model(inputs = inputs, outputs = results);
 
-def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5):
+def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels = 3):
   inputs = tf.keras.Input((channels,)); # inputs.shape = (batch, channels)
   hiddens = [tf.keras.Input((2**i * 2**i * channels * 2,)) for i in range(layers)]; # hiddens[i].shape = (batch, 2^i * 2^i * channels * 2)
   cells = [tf.keras.Input((2**i * 2**i * channels * 2,)) for i in range(layers)]; # cells[i].shape = (batch, 2^i * 2^i * channels * 2)
@@ -29,6 +29,9 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5):
     next_cells.append(cell);
     results = tf.keras.layers.Reshape((2**i, 2**i, 2 * channels))(hidden); # results.shape = (batch, 2^i, 2^i, 2 * channels)
     results = tf.keras.layers.Conv2DTranspose(filters = 2 * channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
+    results = tf.keras.layers.BatchNormalization()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
+    results = tf.keras.layers.LeakyReLU()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
+  results = tf.keras.layers.Conv2DTranspose(filters = img_channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 64, 64, img_channels)
   return tf.keras.Model(inputs = (inputs, *hiddens, *cells), outputs = (results, *next_hiddens, *next_cells));
 
 if __name__ == "__main__":
