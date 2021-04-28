@@ -28,7 +28,7 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5):
     next_hiddens.append(hidden);
     next_cells.append(cell);
     results = tf.keras.layers.Reshape((2**i, 2**i, 2 * channels))(hidden); # results.shape = (batch, 2^i, 2^i, 2 * channels)
-    results = tf.keras.layers.Conv2DTranspose(filters = 2 * channels, kernel_size = (2, 2), padding = 'valid')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
+    results = tf.keras.layers.Conv2DTranspose(filters = 2 * channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
   return tf.keras.Model(inputs = (inputs, *hiddens, *cells), outputs = (results, *next_hiddens, *next_cells));
 
 if __name__ == "__main__":
