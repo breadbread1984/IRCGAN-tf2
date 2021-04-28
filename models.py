@@ -23,11 +23,11 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
   next_hiddens = list();
   next_cells = list();
   for i in range(layers):
-    lstm_inputs = tf.keras.layers.Reshape((1, 2**i * 2**i * 2 * channels))(results); # lstm_inputs.shape = (batch, 1, 2^i * 2^i * channels * 2)
-    results, hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i * 2 * channels, return_state = True)(lstm_inputs, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch, 2^i * 2^i * channels * 2)
+    results = tf.keras.layers.Lambda(lambda x, l: tf.reshape(tf.transpose(x, (0,3,1,2)), (-1, 2**l * 2**l)), arguments = {'l': i})(results); # results.shape = (batch * 2*channels, 2^i, 2^i)
+    results, hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i, return_state = True)(lstm_inputs, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch * 2 * channels, 2^i * 2^i)
     next_hiddens.append(hidden);
     next_cells.append(cell);
-    results = tf.keras.layers.Reshape((2**i, 2**i, 2 * channels))(hidden); # results.shape = (batch, 2^i, 2^i, 2 * channels)
+    results = tf.keras.layers.Lambda(lambda x, c, l: tf.transpose(tf.reshape(x, (-1, 2 * c, 2**l * 2**l)), (0, 2, 3, 1)), arguments = {'l': i, 'c': channels})(results);  # results.shape = (batch, 2^i, 2^i, 2 * channels)
     results = tf.keras.layers.Conv2DTranspose(filters = 2 * channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
     results = tf.keras.layers.BatchNormalization()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
     results = tf.keras.layers.LeakyReLU()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
@@ -37,15 +37,17 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
 if __name__ == "__main__":
 
   encoder = TextEncoder(100,32);
+  encoder.save('encoder.h5');
   inputs = np.random.randint(low = 0, high = 100, size = (50,));
   inputs = tf.RaggedTensor.from_row_lengths(inputs, [50,]);
   inputs = tf.expand_dims(inputs, axis = -1);
   results = encoder(inputs);
   print(results.shape);
   generator = RecurrentTransconvolutionalGenerator();
+  generator.save('generator.h5');
   inputs = np.random.normal(size = (8, 16));
-  hiddens = [np.random.normal(size = (8, 2**i * 2**i * 32)) for i in range(5)];
-  cells = [np.random.normal(size = (8, 2**i * 2**i * 32)) for i in range(5)];
+  hiddens = [np.random.normal(size = (8 * 32, 2**i * 2**i)) for i in range(5)];
+  cells = [np.random.normal(size = (8 * 32, 2**i * 2**i)) for i in range(5)];
   results, hidden1, hidden2, hidden3, hidden4, hidden5, cell1, cell2, cell3, cell4, cell5 = generate([inputs, *hiddens, * cel]);
   print(results.shape);
   print(hidden1.shape);
