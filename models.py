@@ -23,17 +23,17 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
   next_hiddens = list();
   next_cells = list();
   for i in range(layers):
-    before = results; # before.shape = (batch, 2^i, 2^i, 2^(i+1) * channels)
+    before = results; # before.shape = (batch, 2^i, 2^i, 2 * channels)
     results = tf.keras.layers.Lambda(lambda x, l: tf.reshape(tf.transpose(x, (0,3,1,2)), (-1, 2**l * 2**l)), arguments = {'l': i})(results); # results.shape = (batch * 2*channels, 1, 2^i, 2^i)
     lstm_inputs = tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis = 1))(results); # lstm.shape = (batch, 1, 2^i * 2^i)
     results, hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i, return_state = True)(lstm_inputs, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch * 2 * channels, 2^i * 2^i)
     next_hiddens.append(hidden);
     next_cells.append(cell);
-    after = tf.keras.layers.Lambda(lambda x, c, l: tf.transpose(tf.reshape(x, (-1, 2**(l+1) * c, 2**l, 2**l)), (0, 2, 3, 1)), arguments = {'l': i, 'c': channels})(results);  # results.shape = (batch, 2^i, 2^i, 2 * channels)
-    results = tf.keras.layers.Concatenate(axis = -1)([before, after]); # results.shape = (batch, 2^i, 2^i, 2^(i+2) * channels)
-    results = tf.keras.layers.Conv2DTranspose(filters = 2**(i+2) * channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
-    results = tf.keras.layers.BatchNormalization()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2^(i+2) * channels)
-    results = tf.keras.layers.LeakyReLU()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2^(i+2) * channels)
+    after = tf.keras.layers.Lambda(lambda x, c, l: tf.transpose(tf.reshape(x, (-1, 2 * c, 2**l, 2**l)), (0, 2, 3, 1)), arguments = {'l': i, 'c': channels})(results);  # results.shape = (batch, 2^i, 2^i, 2 * channels)
+    results = tf.keras.layers.Concatenate(axis = -1)([before, after]); # results.shape = (batch, 2^i, 2^i, 2 * channels)
+    results = tf.keras.layers.Conv2DTranspose(filters = 2 * channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
+    results = tf.keras.layers.BatchNormalization()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
+    results = tf.keras.layers.LeakyReLU()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
   results = tf.keras.layers.Conv2DTranspose(filters = img_channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 64, 64, img_channels)
   return tf.keras.Model(inputs = (inputs, *hiddens, *cells), outputs = (results, *next_hiddens, *next_cells));
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
   generator = RecurrentTransconvolutionalGenerator();
   generator.save('generator.h5');
   inputs = np.random.normal(size = (8, 16));
-  hiddens = [np.random.normal(size = (8 * 2**(i+1) * 16, 2**i * 2**i)) for i in range(5)];
-  cells = [np.random.normal(size = (8 * 2**(i+1) * 16, 2**i * 2**i)) for i in range(5)];
+  hiddens = [np.random.normal(size = (8 * 2 * 16, 2**i * 2**i)) for i in range(5)];
+  cells = [np.random.normal(size = (8 * 2 * 16, 2**i * 2**i)) for i in range(5)];
   results, hidden1, hidden2, hidden3, hidden4, hidden5, cell1, cell2, cell3, cell4, cell5 = generator([inputs, *hiddens, * cells]);
   print(results.shape);
   print(hidden1.shape);
