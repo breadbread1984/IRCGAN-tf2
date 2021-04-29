@@ -37,6 +37,26 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
   results = tf.keras.layers.Conv2DTranspose(filters = img_channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 64, 64, img_channels)
   return tf.keras.Model(inputs = (inputs, *hiddens, *cells), outputs = (results, *next_hiddens, *next_cells));
 
+class VideoGenerator(tf.keras.Model):
+  def __init__(self, channels = 16, layers = 5, img_channels = 1, length = 16):
+    super(VideoGenerator, self).__init__();
+    self.generator = RecurrentTransconvolutionalGenerator(channels = channels, layers = layers, img_channels = img_channels);
+    self.channels = channels;
+    self._layers = layers;
+    self.length = length;
+  def call(self, inputs):
+    hiddens = [tf.zeros((inputs.shape[0] * 2 * self.channels, 2**i * 2**i) for i in range(self._layers))];
+    cells = [tf.zeros((inputs.shape[0] * 2 * self.channels, 2**i * 2**i) for i in range(self._layers))];
+    video = list();
+    for i in range(self.length):
+      outputs = self.generator([inputs, *hiddens, *cells]);
+      frame = outputs[0]; # frame.shape = (batch, height = 64, width = 64, img_channels = 1)
+      video.append(frame);
+      hiddens = outputs[1:6];
+      cells = outputs[6:11];
+    video = tf.stack(video, axis = 1); # video.shape = (batch, length = 16, height = 64, width = 64, img_channels = 1)
+    return video;
+
 if __name__ == "__main__":
 
   encoder = TextEncoder(100,32);
@@ -58,3 +78,7 @@ if __name__ == "__main__":
   print(hidden3.shape);
   print(hidden4.shape);
   print(hidden5.shape);
+  vgen = VideoGenerator();
+  vgen.save_weights('vgen.h5');
+  video = vgen(inputs);
+  print(video.shape);
