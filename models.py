@@ -27,7 +27,7 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
     results, hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i, return_state = True)(results, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch * 2 * channels, 2^i * 2^i)
     next_hiddens.append(hidden);
     next_cells.append(cell);
-    results = tf.keras.layers.Lambda(lambda x, c, l: tf.transpose(tf.reshape(x, (-1, 2 * c, 2**l * 2**l)), (0, 2, 3, 1)), arguments = {'l': i, 'c': channels})(results);  # results.shape = (batch, 2^i, 2^i, 2 * channels)
+    results = tf.keras.layers.Lambda(lambda x, c, l: tf.transpose(tf.reshape(x, (-1, 2 * c, 2**l, 2**l)), (0, 2, 3, 1)), arguments = {'l': i, 'c': channels})(results);  # results.shape = (batch, 2^i, 2^i, 2 * channels)
     results = tf.keras.layers.Conv2DTranspose(filters = 2 * channels, kernel_size = (3, 3), strides = (2,2), padding = 'same')(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
     results = tf.keras.layers.BatchNormalization()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
     results = tf.keras.layers.LeakyReLU()(results); # results.shape = (batch, 2^(i+1), 2^(i+1), 2 * channels)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
   inputs = np.random.normal(size = (8, 16));
   hiddens = [np.random.normal(size = (8 * 32, 2**i * 2**i)) for i in range(5)];
   cells = [np.random.normal(size = (8 * 32, 2**i * 2**i)) for i in range(5)];
-  results, hidden1, hidden2, hidden3, hidden4, hidden5, cell1, cell2, cell3, cell4, cell5 = generate([inputs, *hiddens, * cel]);
+  results, hidden1, hidden2, hidden3, hidden4, hidden5, cell1, cell2, cell3, cell4, cell5 = generator([inputs, *hiddens, * cells]);
   print(results.shape);
   print(hidden1.shape);
   print(hidden2.shape);
