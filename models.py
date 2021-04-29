@@ -23,7 +23,7 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
   next_hiddens = list();
   next_cells = list();
   for i in range(layers):
-    results = tf.keras.layers.Lambda(lambda x, l: tf.reshape(tf.transpose(x, (0,3,1,2)), (-1, 2**l * 2**l)), arguments = {'l': i})(results); # results.shape = (batch * 2*channels, 2^i, 2^i)
+    results = tf.keras.layers.Lambda(lambda x, l: tf.expand_dims(tf.reshape(tf.transpose(x, (0,3,1,2)), (-1, 2**l * 2**l)), axis = 1), arguments = {'l': i})(results); # results.shape = (batch * 2*channels, 1, 2^i, 2^i)
     results, hidden, cell = tf.keras.layers.LSTM(units = 2**i * 2**i, return_state = True)(results, initial_state = (hiddens[i], cells[i])); # hidden.shape = (batch * 2 * channels, 2^i * 2^i)
     next_hiddens.append(hidden);
     next_cells.append(cell);
