@@ -38,15 +38,15 @@ def RecurrentTransconvolutionalGenerator(channels = 16, layers = 5, img_channels
   return tf.keras.Model(inputs = (inputs, *hiddens, *cells), outputs = (results, *next_hiddens, *next_cells));
 
 class VideoGenerator(tf.keras.Model):
-  def __init__(self, channels = 16, layers = 5, img_channels = 1, length = 16):
+  def __init__(self, filters = 16, layers = 5, img_channels = 1, length = 16):
     super(VideoGenerator, self).__init__();
-    self.generator = RecurrentTransconvolutionalGenerator(channels = channels, layers = layers, img_channels = img_channels);
-    self.channels = channels;
-    self._layers = layers;
+    self.generator = RecurrentTransconvolutionalGenerator(channels = filters, layers = layers, img_channels = img_channels);
+    self.filters = filters;
+    self.layer_num = layers;
     self.length = length;
   def call(self, inputs):
-    hiddens = [tf.zeros((inputs.shape[0] * 2 * self.channels, 2**i * 2**i) for i in range(self._layers))];
-    cells = [tf.zeros((inputs.shape[0] * 2 * self.channels, 2**i * 2**i) for i in range(self._layers))];
+    hiddens = [tf.zeros((inputs.shape[0] * 2 * self.filters, 2**i * 2**i)) for i in range(self.layer_num)];
+    cells = [tf.zeros((inputs.shape[0] * 2 * self.filters, 2**i * 2**i)) for i in range(self.layer_num)];
     video = list();
     for i in range(self.length):
       outputs = self.generator([inputs, *hiddens, *cells]);
@@ -59,6 +59,7 @@ class VideoGenerator(tf.keras.Model):
 
 if __name__ == "__main__":
 
+  assert tf.executing_eagerly();
   encoder = TextEncoder(100,32);
   encoder.save('encoder.h5');
   inputs = np.random.randint(low = 0, high = 100, size = (50,));
@@ -79,6 +80,6 @@ if __name__ == "__main__":
   print(hidden4.shape);
   print(hidden5.shape);
   vgen = VideoGenerator();
-  vgen.save_weights('vgen.h5');
   video = vgen(inputs);
   print(video.shape);
+  vgen.save_weights('vgen.h5');
