@@ -84,8 +84,8 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   results = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # results.shape = (batch, length, height / 16, width / 16, 256)
   results = tf.keras.layers.Lambda(lambda x: x[:,1:,...] - x[:,:-1,...])(results); # results.shape = (batch, length - 1, height / 16, width / 16, 256)
   results = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, *tf.shape(x)[-3:])))(results); # results.shape = (batch * (length - 1), height / 16, width / 16, 256)
-  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (img_size / 16, img_size / 16), padding = 'valid')(results); # results.shape = (batch * (length - 1), 1, 1, 1)
-  motion_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1)), arguments = {'l': length})(results); # motion_disc.shape = (batch, length - 1)
+  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (1, 1), padding = 'same', activation = tf.keras.activations.sigmoid)(results); # results.shape = (batch * (length - 1), height / 16,  width / 16, 1)
+  motion_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # motion_disc.shape = (batch, length - 1, height / 16, width / 16, 1)
   # 1.2) frame loss
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(2d_results); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
@@ -93,8 +93,8 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(results); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
-  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (img_size / 16, img_size / 16), padding = 'valid')(results); # results.shape = (batch * length, 1, 1, 1)
-  frame_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l)), arguments = {'l': length})(results); # frame_disc.shape = (batch, length)
+  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (1, 1), padding = 'same', activation = tf.keras.activations.sigmoid)(results); # results.shape = (batch * length, height / 16, width / 16, 1)
+  frame_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # frame_disc.shape = (batch, length, height / 16, width / 16, 1)
   # 2) whole video
   results = tf.keras.layers.Conv3D(filters = 64, kernel_size = (3,3,3), strides = (2,2,2), padding = 'same')(video); # results.shape = (batch, length / 2, height / 2, width / 2, 64)
   results = tf.keras.layers.BatchNormalization()(results);
@@ -105,11 +105,15 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   results = tf.keras.layers.Conv3D(filters = 256, kernel_size = (3,3,3), strides = (2,2,2), padding = 'same')(results); # results.shape = (batch, length / 8, height / 8, width / 8, 256)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
-  results = tf.keras.layers.Conv3D(filters = 512, kernel_size = (3,3,3), strides = (2,2,2), padding = 'same')(results); # results.shape = (batch, length / 16, height / 6, width / 16, 512)
+  results = tf.keras.layers.Conv3D(filters = 512, kernel_size = (3,3,3), strides = (2,2,2), padding = 'same')(results); # results.shape = (batch, length / 16, height / 16, width / 16, 512)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
   # 2.1) video loss
-  video_results = tf.keras.layers.Conv3D(filters = 512, kernel_size = (3,3,3), strides = ())
+  video_results = tf.keras.layers.Conv3D(filters = 512, kernel_size = (3,3,3), strides = (1,2,2), padding = 'same')(results); # video_results.shape = (batch, length / 16, height / 32, width / 32, 512)
+  video_results = tf.keras.layers.BatchNormalization()(video_results);
+  video_results = tf.keras.layers.LeakyReLU()(video_results);
+  video_results = tf.keras.layers.Conv3D(filters = 512, kernel_size = (3,3,3), strides = (1,2,2), padding = 'same')(video_results); # video_results.shape = (batch, length / 16, height / 64, width / 64, 512)
+  
   # TODO
   # 2.2) text loss
   text_results = tf.keras.layers.Reshape((1, 1, units))(text); # text_results.shape = (batch, 1, 1, units)
