@@ -81,13 +81,13 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(results); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
-  results = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # results.shape = (batch, length, height / 16, width / 16, 256)
+  results = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, x.shape[-3], x.shape[-2], x.shape[-1])), arguments = {'l': length})(results); # results.shape = (batch, length, height / 16, width / 16, 256)
   results = tf.keras.layers.Lambda(lambda x: x[:,1:,...] - x[:,:-1,...])(results); # results.shape = (batch, length - 1, height / 16, width / 16, 256)
-  results = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, *tf.shape(x)[-3:])))(results); # results.shape = (batch * (length - 1), height / 16, width / 16, 256)
-  motion_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1, *tf.shape(x)[-3:])))(results); # motion_disc.shape = (batch, length - 1, height / 16, width / 16, 256)
+  results = tf.keras.layers.Lambda(lambda x: tf.reshape(x, (-1, x.shape[-3], x.shape[-2], x.shape[-1])))(results); # results.shape = (batch * (length - 1), height / 16, width / 16, 256)
+  motion_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1, x.shape[-3], x.shape[-2], x.shape[-1])), arguments = {'l': length})(results); # motion_disc.shape = (batch, length - 1, height / 16, width / 16, 256)
   motion_disc = tf.keras.layers.Lambda(lambda x: tf.math.reduce_mean(x, (1,2,3)))(motion_disc); # motion_disc.shape = (batch, 256)
   motion_disc = tf.keras.layers.Dense(2, activation = tf.keras.activations.softmax)(motion_disc); # motion_disc.shape = (batch, 2)
-  recon_latent0_left = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # recon_latent0.shape = (batch, length - 1, height / 16, width / 16, 256)
+  recon_latent0_left = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1, x.shape[-3], x.shape[-2], x.shape[-1])), arguments = {'l': length})(results); # recon_latent0.shape = (batch, length - 1, height / 16, width / 16, 256)
   recon_latent0_left = tf.keras.layers.Lambda(lambda x: tf.math.reduce_mean(x, (1,2,3)))(recon_latent0_left); # recon_latent0.shape = (batch, 256)
   # 1.2) frame loss
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(motion_frame_inputs); # results.shape = (batch * length, height / 16, width / 16, 256)
@@ -96,10 +96,10 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(results); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
-  frame_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, *tf.reshape(x)[-3:])), arguments = {'l': length})(results); # frame_disc.shape = (batch, length, height / 16, width / 16, 256)
+  frame_disc = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, x.shape[-3], x.shape[-2], x.shape[-1])), arguments = {'l': length})(results); # frame_disc.shape = (batch, length, height / 16, width / 16, 256)
   frame_disc = tf.keras.layers.Lambda(lambda x: tf.math.reduce_mean(x, (1,2,3)))(frame_disc); # frame_disc.shape = (batch, 256)
   frame_disc = tf.keras.layers.Dense(2, activation = tf.keras.activations.softmax)(frame_disc); # frame_disc.shape = (batch, 2)
-  recon_latent0_right = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # recon_latent1.shape = (batch, length, height / 16, width / 16, 256)
+  recon_latent0_right = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l, x.shape[-3], x.shape[-2], x.shape[-1])), arguments = {'l': length})(results); # recon_latent1.shape = (batch, length, height / 16, width / 16, 256)
   recon_latent0_right = tf.keras.layers.Lambda(lambda x: tf.math.reduce_mean(x, (1,2,3)))(recon_latent0_right); # recon_latent1.shape = (batch, 256)
   recon_latent0 = tf.keras.layers.Concatenate(axis = -1)([recon_latent0_left, recon_latent0_right]); # recon_latent0.shape = (batch, 512)
   recon_latent0 = tf.keras.layers.Dense(units, activation = tf.keras.activations.tanh)(recon_latent0); # recon_latent1.shape = (batch, units)
@@ -128,7 +128,7 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   text_results = tf.keras.layers.Conv2DTranspose(filters = 256, kernel_size = (3, 3), strides = (2,2), padding = 'same')(text_results); # text_results.shape = (batch, 2, 2, 256)
   text_results = tf.keras.layers.BatchNormalization()(text_results);
   text_results = tf.keras.layers.LeakyReLU()(text_results);
-  text_results = tf.keras.layers.Conv2DTranspose(filters = 256, kernel_Size = (3, 3), strides = (2,2), padding = 'same')(text_results); # text_results.shape = (batch, 4, 4, 256)
+  text_results = tf.keras.layers.Conv2DTranspose(filters = 256, kernel_size = (3, 3), strides = (2,2), padding = 'same')(text_results); # text_results.shape = (batch, 4, 4, 256)
   text_results = tf.keras.layers.BatchNormalization()(text_results);
   text_results = tf.keras.layers.LeakyReLU()(text_results);
   text_results = tf.keras.layers.Lambda(lambda x: tf.expand_dims(x, axis = 1))(text_results); # text_results.shape = (batch, 1, 4, 4, 256)
