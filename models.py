@@ -168,3 +168,9 @@ if __name__ == "__main__":
   print(video.shape);
   disc = IntrospectiveDiscriminator();
   disc.save('disc.h5');
+  motion_disc, frame_disc, text_disc, recon_latent0, recon_latent1 = disc([video, inputs]);
+  print(motion_disc.shape);
+  print(frame_disc.shape);
+  print(text_disc.shape);
+  print(recon_latent0.shape);
+  print(recon_latent1.shape);
