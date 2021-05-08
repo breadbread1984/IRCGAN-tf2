@@ -73,9 +73,9 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   results = tf.keras.layers.LeakyReLU()(results);
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), strides = (2,2), padding = 'same')(results); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
-  2d_results = tf.keras.layers.LeakyReLU()(results);
+  motion_frame_inputs = tf.keras.layers.LeakyReLU()(results);
   # 1.1) motion loss
-  results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(2d_results); # results.shape = (batch * length, height / 16, width / 16, 256)
+  results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(motion_frame_inputs); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(results); # results.shape = (batch * length, height / 16, width / 16, 256)
@@ -90,7 +90,7 @@ def IntrospectiveDiscriminator(img_size = 64, img_channels = 1, length = 16, uni
   recon_latent0_left = tf.keras.layers.Lambda(lambda x, l: tf.reshape(x, (-1, l-1, *tf.shape(x)[-3:])), arguments = {'l': length})(results); # recon_latent0.shape = (batch, length - 1, height / 16, width / 16, 256)
   recon_latent0_left = tf.keras.layers.Lambda(lambda x: tf.math.reduce_mean(x, (1,2,3)))(recon_latent0_left); # recon_latent0.shape = (batch, 256)
   # 1.2) frame loss
-  results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(2d_results); # results.shape = (batch * length, height / 16, width / 16, 256)
+  results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(motion_frame_inputs); # results.shape = (batch * length, height / 16, width / 16, 256)
   results = tf.keras.layers.BatchNormalization()(results);
   results = tf.keras.layers.LeakyReLU()(results);
   results = tf.keras.layers.Conv2D(filters = 256, kernel_size = (3,3), padding = 'same')(results); # results.shape = (batch * length, height / 16, width / 16, 256)
@@ -166,3 +166,5 @@ if __name__ == "__main__":
   vgen.save_weights('vgen.h5');
   video = vgen(inputs);
   print(video.shape);
+  disc = IntrospectiveDiscriminator();
+  disc.save('disc.h5');
