@@ -14,8 +14,8 @@ np.random.seed(np.random.randint(1<<30))
 # labels = f['train_labels'].value
 # f.close()
 
-num_frames = 10
-seq_length = 10
+num_frames = 16
+seq_length = 16
 image_size = 64
 batch_size = 1
 num_digits = 1
@@ -51,12 +51,7 @@ def create_dataset():
         val.append(dataset[dummy, i])
         train.append(dataset[1-dummy, i])
         count = count + 1
-#    for i in range(4,8):
-#        dummy = count % 2
-#        test.append(dataset[dummy, i])
-#        train.append(dataset[1-dummy, i])
-#        count = count + 1
-#    train.extend(dataset[:,10:].flatten())
+
     return np.array(train), np.array(val)#,np.array(test)
 
 
@@ -174,25 +169,7 @@ def create_gifs_for_data(dataset, data, labels, num):
             final_gif_data[outer_index, :, :, :, :] = dummy
 
             sentence = 'the digits %d is moving %s .' % (labels[idxs[0]],motion_strings[motion])
-            #k = randint(0)
-        #     k = 0
 
-        # #    if k ==0:
-        # #        sentence = 'the digits %d and %d are bouncing here and there .'%(labels[idxs[0]], labels[idxs[1]])
-        # #    elif k == 1:
-        # #        sentence = 'the digits %d and %d are moving here and there .' %(labels[idxs[0]], labels[idxs[1]])
-        # #    elif k == 2:
-        # #        sentence = 'the digits %d and %d are jumping up and down .' %(labels[idxs[0]], labels[idxs[1]])
-        # #    elif k == 3:
-        # #        sentence = 'the digits %d and %d are bouncing up and down .' %(labels[idxs[0]], labels[idxs[1]])
-        #     if k ==0:
-        #         sentence = 'the digits %d is moving left and right .'%(labels[idxs[0]])
-        #     elif k == 1:
-        #         sentence = 'the digits %d is moving here and there .' %(labels[idxs[0]])
-        #     elif k == 2:
-        #         sentence = 'the digits %d is jumping up and down .' %(labels[idxs[0]])
-        #     elif k == 3:
-        #         sentence = 'the digits %d is bouncing up and down .' %(labels[idxs[0]])
             counts_of_sentences[motion_idx] += 1
             print(sentence)
             
@@ -223,14 +200,6 @@ data_train,captions_train,count_train = create_gifs_for_data(train,data,labels,1
 data_val,captions_val,count_val = create_gifs_for_data(val,data, labels, 2000)
 #data_test, captions_test, count_test = create_gifs_for_data(test,data,labels,2000)
 
-# # np.save('video_mnist_with_captions',final_data)
-# f = h5py.File('../mnist.h5')
-# data = f['train'].value.reshape(-1, 28, 28)
-# labels = f['train_labels'].value
-# data_val = f['validation'].value.reshape(-1,28,28)
-# labels_val = f['validation_labels'].value
-# f.close()
-# final_gif_data,captions,counts_of_sentences = create_gifs_for_data(data,labels)
 with h5py.File('mnist_single_gif.h5','w') as hf:
     # final_gif_data,captions,counts_of_sentences = create_gifs_for_data(data,labels)
     hf.create_dataset('mnist_gif_train', data=data_train)
@@ -242,14 +211,4 @@ with h5py.File('mnist_single_gif.h5','w') as hf:
     hf.create_dataset('mnist_captions_val', data=captions_val)
     hf.create_dataset('mnist_count_val', data=count_val)
     hf.create_dataset('mnist_dataset_val', data=val)
-
-#    hf.create_dataset('mnist_gif_test', data=data_test)
-#    hf.create_dataset('mnist_captions_test', data=captions_test)
-#    hf.create_dataset('mnist_count_test', data=count_test)
-#    hf.create_dataset('mnist_dataset_test', data=test)
-    # #np.save('three_framed_dataset.npy', final_gif_data)
-    # final_gif_data,captions,counts_of_sentences = create_gifs_for_data(data_val,labels_val)
-    # hf.create_dataset('mnist_gif_val', data=final_gif_data)
-    # hf.create_dataset('mnist_captions_val', data=captions)
-    # hf.create_dataset('mnist_count_val', data=counts_of_sentences)
 

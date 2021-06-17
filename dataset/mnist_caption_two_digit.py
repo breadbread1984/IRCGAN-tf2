@@ -12,8 +12,8 @@ np.random.seed(np.random.randint(1<<30))
 
 
 
-num_frames = 10
-seq_length = 10
+num_frames = 16
+seq_length = 16
 image_size = 64
 batch_size = 1
 num_digits = 2
