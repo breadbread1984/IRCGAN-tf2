@@ -41,6 +41,8 @@ def write_tfrecord(filename, data, caption):
             'matched': tf.train.Feature(int64_list = [0]),
           }
         ));
+      else:
+        raise Exception('same caption (%s) for two samples (%d, %d)' % (caption1, i, j));
       writer.write(trainsample.SerializeToString());
   writer.close();
 
@@ -50,4 +52,5 @@ if __name__ == "__main__":
   if len(argv) != 2:
     print('Usage: %s (single|double)' % argv[0]);
     exit(1);
-  
+  assert argv[1] in ['mnist_single_gif.h5','mnist_two_gif.h5'];
+  create_dataset('mnist_single_gif.h5' if argv[1] == 'single' else 'mnist_two_gif.h5');
