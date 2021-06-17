@@ -22,8 +22,8 @@ def main(filename = None, vocab_size = None, step = 10000, val_interval = 100):
     caption = next(train_label_iter); # train_caption.shape = (batch, 9)
     code = encoder(caption); # code.shape = (batch, 16)
     fake = g(code); # fake.shape = (batch, 16, 64, 64, 1)
-    real_motion_disc, real_frame_disc, real_text_disc, real_recon_latent0, real_recon_latent1 = d([real, caption]);
-    fake_motion_disc, fake_frame_disc, fake_text_disc, fake_recon_latent0, fake_recon_latent1 = d([fake, caption]);
+    real_motion_disc, real_frame_disc, real_text_disc, real_recon_latent0, real_recon_latent1 = d([real, code]);
+    fake_motion_disc, fake_frame_disc, fake_text_disc, fake_recon_latent0, fake_recon_latent1 = d([fake, code]);
     if i % val_interval == 0:
       real = next(val_data_iter);
       caption = next(val_label_iter);
