@@ -32,7 +32,7 @@ def write_tfrecord(filename, data, caption):
             'matched': tf.train.Feature(int64_list = tf.train.Int64List(value = [1])),
           }
         ));
-      elif caption1 != caption2:
+      elif np.any(caption1 != caption2):
         # write a sample with sample1 and caption2
         trainsample = tf.train.Example(features = tf.train.Features(
           feature = {
