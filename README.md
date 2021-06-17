@@ -20,3 +20,5 @@ after executing successfully, a file named mnist_two_gif.h5 is generated.
 
 the dataset creation code is borrowed from [Sync-Draw](https://github.com/syncdraw/Sync-DRAW/tree/master/dataset) and slightly modified.
 
+## train on moving mnist dataset
+
