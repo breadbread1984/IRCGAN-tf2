@@ -21,6 +21,8 @@ def write_tfrecord(filename, data, caption):
     sample1 = data[i];
     caption1 = caption[i];
     for j in range(data.shape[0]):
+      sample2 = data[j];
+      caption2 = caption[j];      
       if j == i:
         # write a sample with corresponding sample and caption
         trainsample = tf.train.Example(features = tf.train.Features(
@@ -32,8 +34,6 @@ def write_tfrecord(filename, data, caption):
         ));
       elif caption1 != caption2:
         # write a sample with sample1 and caption2
-        sample2 = data[j];
-        caption2 = caption[j];
         trainsample = tf.train.Example(features = tf.train.Features(
           feature = {
             'video': tf.train.Feature(float_list = tf.train.FloatList(value = sample1.reshape((-1,)))),
