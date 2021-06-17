@@ -178,25 +178,26 @@ def create_gifs_for_data(dataset, data, labels, num):
             break
     return final_gif_data, captions, counts_of_sentences
 
-import tensorflow as tf
-(train_x, train_y), (test_x,test_y) = tf.keras.datasets.mnist.load_data()
-train_data = train_x
-train_labels = train_y
-val_data = test_x
-val_labels = test_y
+if __name__ == "__main__":
+  import tensorflow as tf
+  (train_x, train_y), (test_x,test_y) = tf.keras.datasets.mnist.load_data()
+  train_data = train_x
+  train_labels = train_y
+  val_data = test_x
+  val_labels = test_y
 
-data = np.concatenate((train_data,val_data), axis = 0)
-labels = np.concatenate((train_labels,val_labels), axis = 0)
+  data = np.concatenate((train_data,val_data), axis = 0)
+  labels = np.concatenate((train_labels,val_labels), axis = 0)
 
-train, val = create_dataset()
+  train, val = create_dataset()
 
-train, val = create_dataset()
-# print train, val
-data_train, captions_train, count_train = create_gifs_for_data(train, data, labels, 10000)
-data_val, captions_val, count_val = create_gifs_for_data(val, data, labels, 2000)
+  train, val = create_dataset()
+  # print train, val
+  data_train, captions_train, count_train = create_gifs_for_data(train, data, labels, 10000)
+  data_val, captions_val, count_val = create_gifs_for_data(val, data, labels, 2000)
 
 
-with h5py.File('mnist_two_gif.h5','w') as hf:
+  with h5py.File('mnist_two_gif.h5','w') as hf:
     # final_gif_data,captions,counts_of_sentences = create_gifs_for_data(data,labels)
     hf.create_dataset('mnist_gif_train', data=data_train)
     hf.create_dataset('mnist_captions_train', data=captions_train)
