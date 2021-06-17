@@ -20,14 +20,14 @@ def write_tfrecord(filename, data, caption):
   for i in range(data.shape[0]):
     sample1 = data[i];
     caption1 = caption[i];
-    for j in range(data_train.shape[0]):
+    for j in range(data.shape[0]):
       if j == i:
         # write a sample with corresponding sample and caption
         trainsample = tf.train.Example(features = tf.train.Features(
           feature = {
             'video': tf.train.Feature(float_list = tf.train.FloatList(value = sample1.reshape((-1,)))),
             'caption': tf.train.Feature(int64_list = tf.train.Int64List(value = caption1)),
-            'matched': tf.train.Feature(int64_list = [1]),
+            'matched': tf.train.Feature(int64_list = tf.train.Int64List(value = [1])),
           }
         ));
       elif caption1 != caption2:
@@ -38,7 +38,7 @@ def write_tfrecord(filename, data, caption):
           feature = {
             'video': tf.train.Feature(float_list = tf.train.FloatList(value = sample1.reshape((-1,)))),
             'caption': tf.train.Feature(int64_list = tf.train.Int64List(value = caption2)),
-            'matched': tf.train.Feature(int64_list = [0]),
+            'matched': tf.train.Feature(int64_list = tf.train.Int64(value = [0])),
           }
         ));
       else:
@@ -52,5 +52,5 @@ if __name__ == "__main__":
   if len(argv) != 2:
     print('Usage: %s (single|double)' % argv[0]);
     exit(1);
-  assert argv[1] in ['mnist_single_gif.h5','mnist_two_gif.h5'];
+  assert argv[1] in ['single','double'];
   create_dataset('mnist_single_gif.h5' if argv[1] == 'single' else 'mnist_two_gif.h5');
