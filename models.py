@@ -145,6 +145,7 @@ if __name__ == "__main__":
   assert tf.executing_eagerly();
   encoder = TextEncoder(100,64);
   encoder.save('encoder.h5');
+  tf.keras.utils.plot_model(model = encoder, to_file = 'encoder.png', show_shapes = True, dpi = 64);
   inputs = np.random.randint(low = 0, high = 100, size = (50,));
   inputs = tf.RaggedTensor.from_row_lengths(inputs, [50,]);
   inputs = tf.expand_dims(inputs, axis = -1);
@@ -152,6 +153,7 @@ if __name__ == "__main__":
   print(results.shape);
   generator = RecurrentTransconvolutionalGenerator();
   generator.save('generator.h5');
+  tf.keras.utils.plot_model(model = generator, to_file = 'generator.png', show_shapes = True, dpi = 64);
   inputs = np.random.normal(size = (8, 16));
   hiddens = [np.random.normal(size = (8 * 2 * 16, 2**i * 2**i)) for i in range(5)];
   cells = [np.random.normal(size = (8 * 2 * 16, 2**i * 2**i)) for i in range(5)];
@@ -164,10 +166,12 @@ if __name__ == "__main__":
   print(hidden5.shape);
   vgen = VideoGenerator();
   vgen.save_weights('vgen.h5');
+  tf.keras.utils.plot_model(model = vgen, to_file = 'vgen.png', show_shapes = True, dpi = 64);
   video = vgen(inputs);
   print(video.shape);
   disc = IntrospectiveDiscriminator();
   disc.save('disc.h5');
+  tf.keras.utils.plot_model(model = disc, to_file = 'disc.png', show_shapes = True, dpi = 64);
   motion_disc, frame_disc, text_disc, recon_latent0, recon_latent1 = disc([video, inputs]);
   print(motion_disc.shape);
   print(frame_disc.shape);
