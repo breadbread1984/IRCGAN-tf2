@@ -38,7 +38,7 @@ def write_tfrecord(filename, data, caption):
           feature = {
             'video': tf.train.Feature(float_list = tf.train.FloatList(value = sample1.reshape((-1,)))),
             'caption': tf.train.Feature(int64_list = tf.train.Int64List(value = caption2)),
-            'matched': tf.train.Feature(int64_list = tf.train.Int64(value = [0])),
+            'matched': tf.train.Feature(int64_list = tf.train.Int64List(value = [0])),
           }
         ));
       else:
