@@ -42,7 +42,7 @@ def write_tfrecord(filename, data, caption):
           }
         ));
       else:
-        raise Exception('same caption (%s) for two samples (%d, %d)' % (caption1, i, j));
+        pass; # do nothing
       writer.write(trainsample.SerializeToString());
   writer.close();
 
