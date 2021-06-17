@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
   from sys import argv;
   if len(argv) != 2:
-    print('Usage: %s <dataset>' % argv[0]);
+    print('Usage: %s (single|double)' % argv[0]);
     exit(1);
   assert argv[1] in ['single','double'];
   main('mnist_single_gif.h5' if argv[1] == 'single' else 'mnist_two_gif.h5');
