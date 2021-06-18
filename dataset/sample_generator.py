@@ -38,12 +38,16 @@ class SampleGenerator(object):
 
 if __name__ == "__main__":
 
+  import cv2;
   generator = SampleGenerator('mnist_single_gif.h5');
   trainset = generator.get_trainset();
   testset = generator.get_testset();
+  cv2.namedWindow('sample');
   for sample, caption, matched in trainset:
-    print(sample.shape, caption.shape, matched.shape);
-    exit(0)
+    print(caption, matched);
+    for image in sample:
+      cv2.imshow('sample',image.numpy().astype(np.uint8));
+      cv2.waitKey(50);
   generator = SampleGenerator('mnist_two_gif.h5');
   trainset = generator.get_trainset();
   testset = generator.get_testset();
