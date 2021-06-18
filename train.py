@@ -79,6 +79,7 @@ def main(filename = None, vocab_size = None, val_interval = 100):
       with log.as_default():
         tf.summary.scalar('discriminator loss', avg_disc_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('generator loss', avg_gen_loss.result(), step = optimizer.iterations);
+      print('#%d disc loss: %f gen loss: %f' % (optimizer.iterations, avg_disc_loss.result(), avg_gen_loss.result()))
       avg_disc_loss.reset_states();
       avg_gen_loss.reset_states();
 
