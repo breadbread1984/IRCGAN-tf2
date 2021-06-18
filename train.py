@@ -21,7 +21,7 @@ def main(filename = None, vocab_size = None, val_interval = 100):
   d = IntrospectiveDiscriminator();
   true_labels = tf.ones((batch_size,));
   false_labels = tf.zeros((batch_size,));
-  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedulers.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
+  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
   if False == exists('checkpoints'): mkdir('checkpoints');
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
