@@ -22,3 +22,10 @@ the dataset creation code is borrowed from [Sync-Draw](https://github.com/syncdr
 
 ## train on moving mnist dataset
 
+train model with command
+
+```shell
+python3 train.py (single|double)
+```
+
+the parameter is an optional to switch between moving single digit and moving double digits.
