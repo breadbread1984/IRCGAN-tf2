@@ -22,9 +22,12 @@ def main(filename = None, vocab_size = None, val_interval = 100):
   true_labels = tf.ones((batch_size,));
   false_labels = tf.zeros((batch_size,));
   optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedulers.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
-  if False == exists('checkpoint'): mkdir('checkpoint');
+  if False == exists('checkpoints'): mkdir('checkpoints');
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
-  checkpoint.restore(tf.train.latest_checkpoint('checkpoint'));
+  checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
+  log = tf.summary.create_file_writer('checkpoints');
+  avg_disc_loss = tf.keras.metrics.Mean(name = 'discriminator loss', dtype = tf.float32);
+  avg_gen_loss = tf.keras.metrics.Mean(name = 'generator loss', dtype = tf.float32);
   while True:
     real, caption, matched = next(trainset_iter);
     with tf.GradientTape(persistent = True) as tape:
@@ -60,6 +63,8 @@ def main(filename = None, vocab_size = None, val_interval = 100):
       info_loss = tf.keras.losses.MeanSquaredError()(code, fake_recon_latent1) \
                 + tf.keras.losses.MeanSquaredError()(code, fake_recon_latent0);
       gen_loss = g1_loss + g2_loss + info_loss;
+    avg_disc_loss.update_state(disc_loss);
+    avg_gen_loss.update_state(gen_loss);
     # 3) gradients
     d_grads = tape.gradient(disc_loss, d.trainable_variables);
     g_grads = tape.gradient(gen_loss, g.trainable_variables);
@@ -69,6 +74,11 @@ def main(filename = None, vocab_size = None, val_interval = 100):
     optimizer.apply_gradients(zip(e_grads, e.trainable_variables));
     if tf.equal(optimizer.iterations % val_interval, 0):
       checkpoint.save(join('checkpoint','ckpt'));
+      with log.as_default():
+        tf.summary.scalar('discriminator loss', avg_disc_loss.result(), step = optimizer.iterations);
+        tf.summary.scalar('generator loss', avg_gen_loss.result(), step = optimizer.iterations);
+      avg_disc_loss.reset_states();
+      avg_gen_loss.reset_states();
 
 if __name__ == "__main__":
 
