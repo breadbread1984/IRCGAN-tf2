@@ -75,7 +75,7 @@ def main(filename = None, vocab_size = None, val_interval = 100):
     optimizer.apply_gradients(zip(g_grads, g.trainable_variables));
     optimizer.apply_gradients(zip(e_grads, e.trainable_variables));
     if tf.equal(optimizer.iterations % val_interval, 0):
-      checkpoint.save(join('checkpoint','ckpt'));
+      checkpoint.save(join('checkpoints','ckpt'));
       with log.as_default():
         tf.summary.scalar('discriminator loss', avg_disc_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('generator loss', avg_gen_loss.result(), step = optimizer.iterations);
