@@ -19,7 +19,10 @@ class SampleGenerator(object):
       for i in range(data.shape[0]):
         sample1 = np.transpose(data[i], (0,2,3,1));
         caption1 = caption[i];
-        for j in range(data.shape[0]):
+        samples = np.arange(data.shape[0]);
+        np.delete(samples, i);
+        samples = np.random.choice(samples, 3, replace=False);
+        for j in samples:
           sample2 = np.transpose(data[j], (0,2,3,1));
           caption2 = caption[j];      
           if np.all(caption1 == caption2):
