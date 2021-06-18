@@ -29,3 +29,13 @@ python3 train.py (single|double)
 ```
 
 the parameter is an optional to switch between moving single digit and moving double digits.
+
+## save the latest checkpoint to keras model
+
+save with command
+
+```shell
+python3 save_model.py
+```
+
+the script save model to generator.h5.
