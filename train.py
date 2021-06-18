@@ -1,54 +1,74 @@
 #!/usr/bin/python3
 
 from os import mkdir;
-from os.path import exists;
+from os.path import exists, join;
 import tensorflow as tf;
 from models import TextEncoder, VideoGenerator, IntrospectiveDiscriminator;
-from dataset.load_dataset import load_mnist_caption;
+from dataset.sample_generator import SampleGenerator;
 
 batch_size = 4;
 encoder_dim = 16;
 
-def main(filename = None, vocab_size = None, step = 10000, val_interval = 100):
+def main(filename = None, vocab_size = None, val_interval = 100):
   
-  (train_data, train_label), (val_data, val_label) = load_mnist_caption(filename);
-  train_data_iter = iter(train_data.batch(batch_size));
-  train_label_iter = iter(train_label.batch(batch_size));
-  val_data_iter = iter(val_data.batch(batch_size));
-  val_label_iter = iter(val_label.batch(batch_size));
+  dataset_generator = SampleGenerator(filename);
+  trainset = dataset_generator.get_trainset().batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
+  testset = dataset_generator.get_testset().batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
+  trainset_iter = iter(trainset);
+  testset_iter = iter(testset);
   e = TextEncoder(vocab_size, encoder_dim);
   g = VideoGenerator();
   d = IntrospectiveDiscriminator();
-  real_labels = tf.ones((batch_size,));
-  fake_labels = tf.zeros((batch_size,));
+  true_labels = tf.ones((batch_size,));
+  false_labels = tf.zeros((batch_size,));
   optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedulers.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
   if False == exists('checkpoint'): mkdir('checkpoint');
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoint'));
-  for i in range(step):
-    real = tf.transpose(next(train_data_iter),(0,1,3,4,2)); # train_sample = (batch, 16, 64, 64, 1)
-    caption = next(train_label_iter); # train_caption.shape = (batch, 9)
+  while True:
+    real, caption, matched = next(trainset_iter);
     with tf.GradientTape(persistent = True) as tape:
       code = e(caption); # code.shape = (batch, 16)
       fake = g(code); # fake.shape = (batch, 16, 64, 64, 1)
       real_motion_disc, real_frame_disc, real_text_disc, real_recon_latent0, real_recon_latent1 = d([real, code]);
       fake_motion_disc, fake_frame_disc, fake_text_disc, fake_recon_latent0, fake_recon_latent1 = d([fake, code]);
-      d_real_loss = tf.keras.losses.SparseCategoricalCrossentropy()(real_labels, real_motion_disc) \
-              + tf.keras.losses.SparseCategoricalCrossentropy()(real_labels, real_frame_disc) \
-              + tf.keras.losses.SparseCategoricalCrossentropy()(real_labels, real_text_disc);
-      d_fake_loss = tf.keras.losses.SparseCategoricalCrossentropy()(fake_labels, fake_motion_disc) \
-              + tf.keras.losses.SparseCategoricalCrossentropy()(fake_labels, fake_frame_disc) \
-              + tf.keras.losses.SparseCategoricalCrossentropy()(fake_labels, fake_text_disc);
-      g_loss = tf.keras.losses.SparseCategoricalCrossentropy()(real_labels, fake_motion_disc) \
-              + tf.keras.losses.SparseCategoricalCrossentropy()(real_labels, fake_frame_disc) \
-              + tf.keras.losses.SparseCategoricalCrossentropy()(real_labels, fake_text_disc);
-      
-
-    if i % val_interval == 0:
-      real = next(val_data_iter);
-      caption = next(val_label_iter);
-      # TODO
-    
+      # NOTE: D1: text_disc, D2: motion_disc & frame_disc
+      # NOTE: Q1: real_recon_latent1, Q2: real_recon_latent0
+      # 1.1) matched discriminator loss
+      d1_loss = tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, real_text_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(false_labels, fake_text_disc);
+      d2_loss = tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, real_motion_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, real_frame_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(false_labels, fake_motion_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(false_labels, fake_frame_disc);
+      q1_loss = tf.keras.losses.MeanSquaredError()(code, real_recon_latent1);
+      q2_loss = tf.keras.losses.MeanSquaredError()(code, real_recon_latent0);
+      matched_disc_loss = d1_loss + d2_loss + q1_loss + q2_loss;
+      # 1.2) unmatched discriminator loss
+      d1_loss = tf.keras.losses.SparseCategoricalCrossentropy()(false_labels, real_text_disc);
+      d2_loss = tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, real_motion_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, real_frame_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(false_labels, fake_motion_disc) \
+                + tf.keras.losses.SparseCategoricalCrossentropy()(false_labels, fake_frame_disc);
+      unmatched_disc_loss = d1_loss + d2_loss;
+      # 1.3) discriminator loss
+      disc_loss = tf.where(tf.math.equal(matched,1),matched_disc_loss,unmatched_disc_loss);
+      # 2) generator loss
+      g1_loss = tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, fake_text_disc);
+      g2_loss = tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, fake_motion_disc) \
+              + tf.keras.losses.SparseCategoricalCrossentropy()(true_labels, fake_frame_disc);
+      info_loss = tf.keras.losses.MeanSquaredError()(code, fake_recon_latent1) \
+                + tf.keras.losses.MeanSquaredError()(code, fake_recon_latent0);
+      gen_loss = g1_loss + g2_loss + info_loss;
+    # 3) gradients
+    d_grads = tape.gradient(disc_loss, d.trainable_variables);
+    g_grads = tape.gradient(gen_loss, g.trainable_variables);
+    e_grads = tape.gradient(disc_loss + gen_loss, e.trainable_variables);
+    optimizer.apply_gradients(zip(d_grads, d.trainable_variables));
+    optimizer.apply_gradients(zip(g_grads, g.trainable_variables));
+    optimizer.apply_gradients(zip(e_grads, e.trainable_variables));
+    if tf.equal(optimizer.iterations % val_interval, 0):
+      checkpoint.save(join('checkpoint','ckpt'));
 
 if __name__ == "__main__":
 
@@ -64,4 +84,3 @@ if __name__ == "__main__":
     from dataset.mnist_caption_two_digit import dictionary;
     vocab_size = len(dictionary);
   main('mnist_single_gif.h5' if argv[1] == 'single' else 'mnist_two_gif.h5', vocab_size);
-
