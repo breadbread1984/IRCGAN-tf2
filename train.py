@@ -63,12 +63,14 @@ def main(filename = None, vocab_size = None, val_interval = 100):
       info_loss = tf.keras.losses.MeanSquaredError()(code, fake_recon_latent1) \
                 + tf.keras.losses.MeanSquaredError()(code, fake_recon_latent0);
       gen_loss = g1_loss + g2_loss + info_loss;
+      # 3) encoder loss
+      enc_loss = disc_loss + gen_loss;
     avg_disc_loss.update_state(disc_loss);
     avg_gen_loss.update_state(gen_loss);
     # 3) gradients
     d_grads = tape.gradient(disc_loss, d.trainable_variables);
     g_grads = tape.gradient(gen_loss, g.trainable_variables);
-    e_grads = tape.gradient(disc_loss + gen_loss, e.trainable_variables);
+    e_grads = tape.gradient(enc_loss, e.trainable_variables);
     optimizer.apply_gradients(zip(d_grads, d.trainable_variables));
     optimizer.apply_gradients(zip(g_grads, g.trainable_variables));
     optimizer.apply_gradients(zip(e_grads, e.trainable_variables));
