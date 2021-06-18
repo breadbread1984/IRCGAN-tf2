@@ -1,5 +1,7 @@
 # IRC-GAN
 
+this project implement text2video generative algorithm introduced in paper [IRC-GAN: Introspective Recurrent Convolutional GAN for Text-to-video Generation](https://www.ijcai.org/Proceedings/2019/0307.pdf)
+
 ## create dataset
 
 create moving single digit dataset with command
