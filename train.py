@@ -9,7 +9,7 @@ from dataset.sample_generator import SampleGenerator;
 batch_size = 4;
 encoder_dim = 16;
 
-def main(filename = None, vocab_size = None, val_interval = 100):
+def main(filename = None, vocab_size = None, val_interval = 100, ckpt_interval = 10000):
   
   dataset_generator = SampleGenerator(filename);
   trainset = dataset_generator.get_trainset().batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
@@ -21,7 +21,7 @@ def main(filename = None, vocab_size = None, val_interval = 100):
   d = IntrospectiveDiscriminator();
   true_labels = tf.ones((batch_size,));
   false_labels = tf.zeros((batch_size,));
-  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
+  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-4, decay_steps = 60000, decay_rate = 0.5));
   if False == exists('checkpoints'): mkdir('checkpoints');
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
@@ -74,8 +74,9 @@ def main(filename = None, vocab_size = None, val_interval = 100):
     optimizer.apply_gradients(zip(d_grads, d.trainable_variables));
     optimizer.apply_gradients(zip(g_grads, g.trainable_variables));
     optimizer.apply_gradients(zip(e_grads, e.trainable_variables));
-    if tf.equal(optimizer.iterations % val_interval, 0):
+    if tf.equal(optimizer.iterations % ckpt_interval, 0):
       checkpoint.save(join('checkpoints','ckpt'));
+    if tf.equal(optimizer.iterations % val_interval, 0):
       with log.as_default():
         tf.summary.scalar('discriminator loss', avg_disc_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('generator loss', avg_gen_loss.result(), step = optimizer.iterations);
