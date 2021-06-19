@@ -32,14 +32,13 @@ def main(digits, movings):
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
   # predict
-  tokens = tf.expand_dims(tokens, axis = 0);
   tokens = tf.expand_dims(tokens, axis = -1);
   code = e(tokens);
   videos = g(code);
   video = videos[0].numpy(); # video.shape = (16,64,64,1)
   writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, (64,64), True);
   for frame in video:
-    frame.astype(np.uint8);
+    frame = frame.astype(np.uint8);
     writer.write(frame);
   writer.release();
 
