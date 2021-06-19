@@ -6,7 +6,7 @@ import tensorflow as tf;
 from models import TextEncoder, VideoGenerator, IntrospectiveDiscriminator;
 from dataset.sample_generator import SampleGenerator;
 
-batch_size = 4;
+batch_size = 64;
 encoder_dim = 16;
 
 def main(filename = None, vocab_size = None, val_interval = 100, ckpt_interval = 10000):
@@ -21,7 +21,7 @@ def main(filename = None, vocab_size = None, val_interval = 100, ckpt_interval =
   d = IntrospectiveDiscriminator();
   true_labels = tf.ones((batch_size,));
   false_labels = tf.zeros((batch_size,));
-  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-4, decay_steps = 60000, decay_rate = 0.5));
+  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-4, decay_steps = 20000, decay_rate = 0.97));
   if False == exists('checkpoints'): mkdir('checkpoints');
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));

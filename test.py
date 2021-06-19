@@ -37,9 +37,10 @@ def main(digits, movings):
   videos = g(code);
   video = videos[0].numpy(); # video.shape = (16,64,64,1)
   writer = cv2.VideoWriter('output.avi', cv2.VideoWriter_fourcc(*'XVID'), 20.0, (64,64), True);
-  for frame in video:
+  for i,frame in enumerate(video):
     frame = frame.astype(np.uint8);
     writer.write(frame);
+    cv2.imwrite('%d.png' % i,frame);
   writer.release();
 
 def input_digit(message):

@@ -24,7 +24,7 @@ class SampleGenerator(object):
         samples = np.random.choice(samples, 3, replace=False);
         for j in samples:
           sample2 = np.transpose(data[j], (0,2,3,1));
-          caption2 = caption[j];      
+          caption2 = np.expand_dims(caption[j], axis = -1);      
           if np.all(caption1 == caption2):
             # write a sample with corresponding sample and caption
             yield sample1, caption2, 1;
@@ -35,9 +35,9 @@ class SampleGenerator(object):
             raise Exception('mustn\'t be here');
     return gen;
   def get_trainset(self,):
-    return tf.data.Dataset.from_generator(self.sample_generator(True), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,]), tf.TensorShape([]))).repeat(-1);
+    return tf.data.Dataset.from_generator(self.sample_generator(True), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,1,]), tf.TensorShape([]))).repeat(-1);
   def get_testset(self):
-    return tf.data.Dataset.from_generator(self.sample_generator(False), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,]), tf.TensorShape([]))).repeat(-1);
+    return tf.data.Dataset.from_generator(self.sample_generator(False), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,1,]), tf.TensorShape([]))).repeat(-1);
 
 if __name__ == "__main__":
 
