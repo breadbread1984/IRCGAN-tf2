@@ -10,8 +10,8 @@ def main(digits, movings):
 
   assert len(digits) in [1,2];
   assert len(movings) in [1,2];
-  [assert digit in [*"0123456789"] for digit in digits];
-  [assert moving in ['left and right','up and down'] for moving in movings];
+  assert np.all([digit in [*"0123456789"] for digit in digits]);
+  assert np.all([moving in ['left and right','up and down'] for moving in movings]);
   assert len(digits) == len(movings);
   if len(digits) == 1:
     sentence = 'the digits %d is moving %s .' % (digits[0],movings[0]);
