@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import numpy as np;
 import cv2;
 import tensorflow as tf;
 import dataset.mnist_caption_single as single;
