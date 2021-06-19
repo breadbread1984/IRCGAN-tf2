@@ -11,7 +11,7 @@ def main(digits, movings):
 
   assert len(digits) in [1,2];
   assert len(movings) in [1,2];
-  assert np.all([digit in [*"0123456789"] for digit in digits]);
+  assert np.all([digit in [0,1,2,3,4,5,6,7,8,9] for digit in digits]);
   assert np.all([moving in ['left and right','up and down'] for moving in movings]);
   assert len(digits) == len(movings);
   if len(digits) == 1:
@@ -41,7 +41,7 @@ def input_digit(message):
       print('wrong digit, enter again');
       continue;
     break;
-  return digit;
+  return int(digit);
 
 def input_movement(message):
   while True:
