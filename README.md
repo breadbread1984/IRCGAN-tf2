@@ -40,4 +40,4 @@ save with command
 python3 save_model.py
 ```
 
-the script save model to generator.h5.
+the script save model to generator_weights.h5.
