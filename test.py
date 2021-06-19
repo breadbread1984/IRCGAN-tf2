@@ -5,7 +5,9 @@ import cv2;
 import tensorflow as tf;
 import dataset.mnist_caption_single as single;
 import dataset.mnist_caption_two_digit as double;
-from models import VideoGenerator;
+from models import TextEncoder, VideoGenerator, IntrospectiveDiscriminator;
+
+encoder_dim = 16;
 
 def main(digits, movings):
 
@@ -15,16 +17,23 @@ def main(digits, movings):
   assert np.all([moving in ['left and right','up and down'] for moving in movings]);
   assert len(digits) == len(movings);
   if len(digits) == 1:
-    sentence = 'the digits %d is moving %s .' % (digits[0],movings[0]);
-    tokens = sent2matrix(sentence, single.dictionary);
+    sentence = 'the digits %d is moving %s .' % (digits[0], movings[0]);
+    tokens = single.sent2matrix(sentence, single.dictionary);
+    e = TextEncoder(len(single.dictionary), encoder_dim);
   else:
     sentence = 'digit %d is %s and digit %d is %s .' % (digits[0], movings[0], digits[1], movings[1]);
-    tokens = sent2matrix(sentence, double.dictionary);
+    tokens = double.sent2matrix(sentence, double.dictionary);
+    e = TextEncoder(len(double.dictionary), encoder_dim);
   print(sentence);
-  e = tf.keras.models.load_model('encoder.h5', custom_objects = {'tf': tf});
+  # load weights
   g = VideoGenerator();
-  g.load_weights('generator_weights.h5');
+  d = IntrospectiveDiscriminator();
+  optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
+  checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
+  checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
+  # predict
   tokens = tf.expand_dims(tokens, axis = 0);
+  tokens = tf.expand_dims(tokens, axis = -1);
   code = e(tokens);
   videos = g(code);
   video = videos[0].numpy(); # video.shape = (16,64,64,1)
