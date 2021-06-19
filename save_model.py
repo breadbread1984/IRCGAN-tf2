@@ -12,6 +12,7 @@ def main(vocab_size):
   optimizer = tf.keras.optimizers.Adam(tf.keras.optimizers.schedules.ExponentialDecay(1e-3, decay_steps = 60000, decay_rate = 0.5));
   checkpoint = tf.train.Checkpoint(encoder = e, generator = g, discriminator = d, optimizer = optimizer);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
+  e.save('encoder.h5');
   g.save_weights('generator_weights.h5');
 
 if __name__ == "__main__":

@@ -40,4 +40,4 @@ save with command
 python3 save_model.py
 ```
 
-the script save model to generator_weights.h5.
+the script save generative model to generator_weights.h5 and save encoder to encoder.h5.
