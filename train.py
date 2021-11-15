@@ -82,6 +82,7 @@ def main(filename = None, vocab_size = None, val_interval = 100, ckpt_interval =
       fake = g(code); # fake.shape = (1, 16, 64, 64, 1)
       fake = tf.transpose(tf.reshape((fake + 1) * 128., (1,4,4,64,64,1)), (0,1,3,2,4,5)); # fake.shape = (1, 4, 64, 4, 64, 1)
       fake = tf.tile(tf.reshape(fake, (1, 256, 256, 1)), (1,1,1,3)); # fake.shape = (1, 256, 256, 3)
+      fake = tf.cast(fake, dtype = tf.uint8);
       with log.as_default():
         tf.summary.scalar('discriminator loss', avg_disc_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('generator loss', avg_gen_loss.result(), step = optimizer.iterations);
