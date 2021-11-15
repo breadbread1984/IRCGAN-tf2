@@ -13,7 +13,7 @@ def main(filename = None, vocab_size = None, val_interval = 100, ckpt_interval =
   
   dataset_generator = SampleGenerator(filename);
   trainset = dataset_generator.get_trainset().batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
-  testset = dataset_generator.get_testset().batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE);
+  testset = dataset_generator.get_testset().batch(1).prefetch(tf.data.experimental.AUTOTUNE);
   trainset_iter = iter(trainset);
   testset_iter = iter(testset);
   e = TextEncoder(vocab_size, encoder_dim);
@@ -77,9 +77,15 @@ def main(filename = None, vocab_size = None, val_interval = 100, ckpt_interval =
     if tf.equal(optimizer.iterations % ckpt_interval, 0):
       checkpoint.save(join('checkpoints','ckpt'));
     if tf.equal(optimizer.iterations % val_interval, 0):
+      real, caption, matched = next(testset_iter);
+      code = e(caption);
+      fake = g(code); # fake.shape = (1, 16, 64, 64, 1)
+      fake = tf.transpose(tf.reshape((fake + 1) * 128., (1,4,4,64,64,1)), (0,1,3,2,4,5)); # fake.shape = (1, 4, 64, 4, 64, 1)
+      fake = tf.tile(tf.reshape(fake, (1, 256, 256, 1)), (1,1,1,3)); # fake.shape = (1, 256, 256, 3)
       with log.as_default():
         tf.summary.scalar('discriminator loss', avg_disc_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('generator loss', avg_gen_loss.result(), step = optimizer.iterations);
+        tf.summary.image('video', fake, step = optimizre.iterations);
       print('#%d disc loss: %f gen loss: %f' % (optimizer.iterations, avg_disc_loss.result(), avg_gen_loss.result()))
       avg_disc_loss.reset_states();
       avg_gen_loss.reset_states();

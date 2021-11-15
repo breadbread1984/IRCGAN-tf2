@@ -34,10 +34,13 @@ class SampleGenerator(object):
           else:
             raise Exception('mustn\'t be here');
     return gen;
+  def parse_function(self, sample, caption, label):
+    sample = sample / 128. - 1; # in range [-1, 1]
+    return sample, caption, label;
   def get_trainset(self,):
-    return tf.data.Dataset.from_generator(self.sample_generator(True), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,1,]), tf.TensorShape([]))).repeat(-1);
+    return tf.data.Dataset.from_generator(self.sample_generator(True), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,1,]), tf.TensorShape([]))).map(self.parse_function).repeat(-1);
   def get_testset(self):
-    return tf.data.Dataset.from_generator(self.sample_generator(False), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,1,]), tf.TensorShape([]))).repeat(-1);
+    return tf.data.Dataset.from_generator(self.sample_generator(False), (tf.float32, tf.int64, tf.int64), (tf.TensorShape([16,64,64,1]), tf.TensorShape([9,1,]), tf.TensorShape([]))).map(self.parse_function).repeat(-1);
 
 if __name__ == "__main__":
 
@@ -48,6 +51,7 @@ if __name__ == "__main__":
   cv2.namedWindow('sample');
   for sample, caption, matched in trainset:
     print(caption, matched);
+    sample = (sample + 1) * 128.;
     for image in sample:
       cv2.imshow('sample',image.numpy().astype(np.uint8));
       cv2.waitKey(50);
